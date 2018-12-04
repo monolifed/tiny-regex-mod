@@ -27,8 +27,8 @@
 // ---------
 
 
-#ifndef TRE_RE_H_INCLUDE
-#define TRE_RE_H_INCLUDE
+#ifndef TRE_H_INCLUDE
+#define TRE_H_INCLUDE
 
 #ifndef TRE_STATIC
 #define TRE_DEF extern
