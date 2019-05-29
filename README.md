@@ -11,6 +11,6 @@ Adds a few features and removes some minor issues:
 - merged quantifier (?,*,+,{}) matching into two function (one for greedy, one for lazy)
 - added upper limits to quantifiers
 - (hopefully) fixed class range matching
-- (hopefully) fixed handling of escape characters
+- (hopefully) fixed handling of escaped characters
 - (hopefully) fixed `.` matching (doesn't match `\r` or `\n`)
 - probably butchered print functionality
