@@ -11,7 +11,7 @@ int main(int argc, char **argv)
 	if (argc < 3)
 	{
 		printf("Usage: %s pattern string\n", argv[0]);
-		return 1;
+		return -1;
 	}
 	tre_comp tregex;
 	tre_compile(argv[1], &tregex);
@@ -24,10 +24,11 @@ int main(int argc, char **argv)
 	if (start)
 	{
 		printf("match start: %zu match end: %zu\n", start - string, end - string);
+		return 1;
 	}
 	else
 	{
 		printf("no match\n");
+		return 0;
 	}
-	return 0;
 }
