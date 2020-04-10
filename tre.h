@@ -54,16 +54,16 @@ struct tre_node
 	unsigned char  type;
 	union
 	{
-		unsigned char  ch;    // character
-		unsigned char *cc;    // character class buffer
+		char  ch;    // character
+		char *cc;    // character class buffer
 		unsigned short mn[2]; // {m,n} quantifier
-	};
+	} u;
 };
 
 struct tre_comp
 {
 	tre_node nodes[TRE_MAX_NODES];
-	unsigned char buffer[TRE_MAX_BUFLEN];
+	char buffer[TRE_MAX_BUFLEN];
 };
 
 // Compile regex string pattern as tre_comp struct tregex
@@ -190,10 +190,10 @@ TRE_DEF int tre_ncompile(const char *pattern, unsigned plen, tre_comp *tregex)
 		return tre_err("NULL/empty string or tre_comp");
 		
 	tre_node *tnode = tregex->nodes;
-	unsigned char *buf = tregex->buffer;
+	char *buf = tregex->buffer;
 	unsigned buflen = sizeof tregex->buffer;
-	unsigned char quable = 0; // is the last node quantifiable
-	unsigned char temp;
+	char quable = 0; // is the last node quantifiable
+	char temp;
 	
 	unsigned idx = 0;
 	
@@ -243,7 +243,7 @@ TRE_DEF int tre_ncompile(const char *pattern, unsigned plen, tre_comp *tregex)
 			case 'S': tnode[j].type = TRE_NSPACE; break;
 			
 			// Not in [dDwWsS]
-			default: tnode[j].type = TRE_CHAR; tnode[j].ch = pattern[i]; break;
+			default: tnode[j].type = TRE_CHAR; tnode[j].u.ch = pattern[i]; break;
 			}
 		} break;
 		
@@ -254,7 +254,7 @@ TRE_DEF int tre_ncompile(const char *pattern, unsigned plen, tre_comp *tregex)
 			
 			// Look-ahead to determine if negated
 			tnode[j].type = (pattern[i + 1] == '^') ? (i++, TRE_NCLASS) : TRE_CLASS;
-			tnode[j].cc = buf + idx;
+			tnode[j].u.cc = buf + idx;
 			
 			// Copy characters inside [...] to buffer
 			while (pattern[++i] != ']' && i < plen)
@@ -318,13 +318,13 @@ TRE_DEF int tre_ncompile(const char *pattern, unsigned plen, tre_comp *tregex)
 			{
 				if (i >= plen || pattern[i] < '0' || pattern[i] > '9')
 					return tre_err("Non-digit min value in quantifier");
-				val = 10 * val + (pattern[i++] - '0');
+				val = 10 * val + (unsigned) (pattern[i++] - '0');
 			}
 			while (pattern[i] != ',' && pattern[i] != '}');
 			
 			if (val > TRE_MAXQUANT)
 				return tre_err("Min value too big in quantifier");
-			tnode[j].mn[0] = val;
+			tnode[j].u.mn[0] = val;
 			
 			if (pattern[i] == ',')
 			{
@@ -341,19 +341,19 @@ TRE_DEF int tre_ncompile(const char *pattern, unsigned plen, tre_comp *tregex)
 					{
 						if (i >= plen || pattern[i] < '0' || pattern[i] > '9')
 							return tre_err("Non-digit max value in quantifier");
-						val = 10 * val + (pattern[i++] - '0');
+						val = 10 * val + (unsigned) (pattern[i++] - '0');
 					}
 					
-					if (val > TRE_MAXQUANT || val < tnode[j].mn[0])
+					if (val > TRE_MAXQUANT || val < tnode[j].u.mn[0])
 						return tre_err("Max value too big or less than min value in quantifier");
 				}
 			}
 			tnode[j].type = (i + 1 < plen && pattern[i + 1] == '?') ? (i++, TRE_LQUANT) : TRE_QUANT;
-			tnode[j].mn[1] = val;
+			tnode[j].u.mn[1] = val;
 		} break;
 		
 		// Regular characters
-		default: quable = 1; tnode[j].type = TRE_CHAR; tnode[j].ch = pattern[i]; break;
+		default: quable = 1; tnode[j].type = TRE_CHAR; tnode[j].u.ch = pattern[i]; break;
 		}
 		i++;
 		j++;
@@ -389,9 +389,9 @@ static int matchmetachar(char c, char mc)
 }
 
 // note: compiler makes sure '\\' is followed by one of 'dDwWsS\\'
-static int matchcharclass(char c, const unsigned char *str)
+static int matchcharclass(char c, const char *str)
 {
-	unsigned char rmax;
+	char rmax;
 	while (*str != '\0')
 	{
 		if (str[0] == '\\')
@@ -436,10 +436,10 @@ static int matchone(const tre_node *tnode, char c)
 {
 	switch (tnode->type)
 	{
-	case TRE_CHAR:   return (tnode->ch == c);
+	case TRE_CHAR:   return (tnode->u.ch == c);
 	case TRE_DOT:    return  TRE_MATCHDOT(c);
-	case TRE_CLASS:  return  matchcharclass(c, tnode->cc);
-	case TRE_NCLASS: return !matchcharclass(c, tnode->cc);
+	case TRE_CLASS:  return  matchcharclass(c, tnode->u.cc);
+	case TRE_NCLASS: return !matchcharclass(c, tnode->u.cc);
 	case TRE_DIGIT:  return  TRE_MATCHDIGIT(c);
 	case TRE_NDIGIT: return !TRE_MATCHDIGIT(c);
 	case TRE_ALPHA:  return  TRE_MATCHALNUM(c);
@@ -511,9 +511,9 @@ static const char *matchpattern(const tre_node *nodes, const char *text, const c
 		case TRE_LQMARK:
 			return matchquant_lazy(nodes, text, tend, 0, 1);
 		case TRE_QUANT:
-			return matchquant(nodes, text, tend, nodes[1].mn[0], nodes[1].mn[1]);
+			return matchquant(nodes, text, tend, nodes[1].u.mn[0], nodes[1].u.mn[1]);
 		case TRE_LQUANT:
-			return matchquant_lazy(nodes, text, tend, nodes[1].mn[0], nodes[1].mn[1]);
+			return matchquant_lazy(nodes, text, tend, nodes[1].u.mn[0], nodes[1].u.mn[1]);
 		case TRE_STAR:
 			return matchquant(nodes, text, tend, 0, TRE_MAXPLUS);
 		case TRE_LSTAR:
@@ -554,15 +554,15 @@ void tre_print(const tre_comp *tregex)
 		printf("type: %s", tre_typenames[tnode[i].type]);
 		if (tnode[i].type == TRE_CLASS || tnode[i].type == TRE_NCLASS)
 		{
-			printf(" \"%s\"", tnode[i].cc);
+			printf(" \"%s\"", tnode[i].u.cc);
 		}
 		else if (tnode[i].type == TRE_QUANT || tnode[i].type == TRE_LQUANT)
 		{
-			printf(" {%d,%d}", tnode[i].mn[0], tnode[i].mn[1]);
+			printf(" {%d,%d}", tnode[i].u.mn[0], tnode[i].u.mn[1]);
 		}
 		else if (tnode[i].type == TRE_CHAR)
 		{
-			printf(" '%c'", tnode[i].ch);
+			printf(" '%c'", tnode[i].u.ch);
 		}
 		printf("\n");
 	}
