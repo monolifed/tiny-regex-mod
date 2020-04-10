@@ -16,5 +16,6 @@ jobs:
     - uses: leafo/gh-actions-lua@v5
     - name: make
       run: make
+    - uses: leafo/gh-actions-lua@v5
     - name: lua test.lua
       run: lua test.lua
