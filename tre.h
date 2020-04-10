@@ -483,7 +483,7 @@ static const char *matchquant(const tre_node *nodes, const char *text, const cha
 	const char *end, *start = text;
 	while (max && text < tend && matchone(nodes, *text)) { text++; max--; }
 	
-	while (text - start >= min)
+	while (text >= start + min)
 	{
 		end = matchpattern(nodes + 2, text--, tend);
 		if (end)
