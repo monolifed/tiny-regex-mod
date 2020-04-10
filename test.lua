@@ -8,7 +8,7 @@ end
 
 local OK  = "OK"
 local NOK = "NOK"
-local exit_status = false --testing
+local exit_status = true
 
 local test_tre = function(expected, pattern, sample)
 	local result
@@ -26,6 +26,7 @@ local test_tre = function(expected, pattern, sample)
 		end
 		print(_sf(printfmt, result, pattern, sample, expected))
 	else
+		exit_status = false
 		print(_sf(printfmt, "ERROR", pattern, sample, expected))
 		print(_sf("\t%s code:%s", exit, match))
 	end
