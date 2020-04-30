@@ -460,19 +460,21 @@ static const char *matchquant_lazy(const tre_node *nodes, const char *text, cons
     unsigned min, unsigned max)
 {
 	const char *end;
-	max = max - min + 1;
+	max = max - min;
 	while (min && text < tend && matchone(nodes, *text)) { text++; min--; }
 	
 	if (min)
 		return 0;
-	do
+	
+	if ((end = matchpattern(nodes + 2, text, tend)))
+		return end;
+	
+	while (max && text < tend && matchone(nodes, *text))
 	{
-		end = matchpattern(nodes + 2, text, tend);
-		if (end)
+		text++; max--;
+		if ((end = matchpattern(nodes + 2, text, tend)))
 			return end;
-		max--;
 	}
-	while (max && text < tend && matchone(nodes, *text++));
 	
 	return 0;
 }
@@ -485,8 +487,7 @@ static const char *matchquant(const tre_node *nodes, const char *text, const cha
 	
 	while (text >= start)
 	{
-		end = matchpattern(nodes + 2, text--, tend);
-		if (end)
+		if ((end = matchpattern(nodes + 2, text--, tend)))
 			return end;
 	}
 	
