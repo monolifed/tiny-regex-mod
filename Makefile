@@ -1,4 +1,4 @@
-CFLAGS:=-O2 -Wall -Wextra -Wsign-conversion -pedantic -std=c99
+CFLAGS:=-O2 -Wall -Wextra -Wvla -Wsign-conversion -pedantic -std=c99
 APPNAME:=match
 
 ifeq ($(OS),Windows_NT)
